@@ -3,8 +3,8 @@ pipeline {
     environment {
         DOCKER_IMAGE = "robustcoder/java-app:latest"
         // Jenkins runs as LocalSystem: it needs explicit paths to Maven and the kubeconfig
-        PATH = "C:\Users\khana\tools\apache-maven-3.9.9\bin;${env.PATH}"
-        KUBECONFIG = "C:\Users\khana\.kube\config"
+        PATH = "C:\\Users\\khana\\tools\\apache-maven-3.9.9\\bin;${env.PATH}"
+        KUBECONFIG = "C:\\Users\\khana\\.kube\\config"
     }
     stages {
         stage('Clone Repository') {
