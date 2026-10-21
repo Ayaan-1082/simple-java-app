@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        DOCKER_IMAGE = "<dockerhub-username>/java-app:latest"
+        DOCKER_IMAGE = "robustcoder/java-app:latest"
     }
     stages {
         stage('Clone Repository') {
