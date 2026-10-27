@@ -1,0 +1,23 @@
+pipeline {
+    agent any
+    options {
+        timeout(time: 10, unit: 'MINUTES')
+        timestamps()
+        disableConcurrentBuilds()
+    }
+    stages {
+        stage('Prepare namespace') {
+            steps {
+                bat 'kubectl --context docker-desktop apply -f sets/set-01/namespace.yaml'
+            }
+        }
+        stage('Verify Kubernetes connection') {
+            steps {
+                bat 'kubectl --context docker-desktop cluster-info'
+                bat 'kubectl --context docker-desktop get nodes -o wide'
+                bat 'kubectl --context docker-desktop -n k8s-set-01 auth can-i create deployments'
+                bat 'kubectl --context docker-desktop -n k8s-set-01 get pods'
+            }
+        }
+    }
+}

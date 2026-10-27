@@ -1,4 +1,7 @@
-FROM eclipse-temurin:17-jdk
+FROM node:24-alpine
 WORKDIR /app
-COPY target/simple-java-app-1.0.jar app.jar
-CMD ["java", "-jar", "app.jar"]
+COPY app/package.json ./
+COPY app/server.js app/server.test.js ./
+USER node
+EXPOSE 3000
+CMD ["node", "server.js"]

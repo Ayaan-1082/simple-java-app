@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: config-web
+  namespace: k8s-set-08
+spec:
+  type: ClusterIP
+  selector:
+    app: config-web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

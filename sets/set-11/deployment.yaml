@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: github-web
+  namespace: k8s-set-11
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: github-web
+  template:
+    metadata:
+      labels:
+        app: github-web
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.28-alpine
+          ports:
+            - containerPort: 80
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 96Mi}
+          readinessProbe:
+            httpGet: {path: /, port: 80}
+            initialDelaySeconds: 2
+            periodSeconds: 3
+          volumeMounts:
+            - name: page
+              mountPath: /usr/share/nginx/html/index.html
+              subPath: index.html
+      volumes:
+        - name: page
+          configMap:
+            name: github-page
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: github-web
+  namespace: k8s-set-11
+spec:
+  selector:
+    app: github-web
+  ports:
+    - port: 80
+      targetPort: 80

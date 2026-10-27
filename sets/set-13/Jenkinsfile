@@ -1,0 +1,25 @@
+pipeline {
+    agent any
+    options { timeout(time: 10, unit: 'MINUTES'); timestamps(); disableConcurrentBuilds() }
+    stages {
+        stage('Deploy initial version') {
+            steps {
+                bat 'kubectl --context docker-desktop apply -f sets/set-13/deployment.yaml'
+                bat 'kubectl --context docker-desktop -n k8s-set-13 rollout status deployment/rolling-web --timeout=180s'
+            }
+        }
+        stage('Perform rolling update') {
+            steps {
+                bat 'kubectl --context docker-desktop -n k8s-set-13 set image deployment/rolling-web web=nginx:alpine'
+                bat 'kubectl --context docker-desktop -n k8s-set-13 rollout status deployment/rolling-web --timeout=180s'
+            }
+        }
+        stage('Verify rollout') {
+            steps {
+                bat 'kubectl --context docker-desktop -n k8s-set-13 rollout history deployment/rolling-web'
+                bat 'kubectl --context docker-desktop -n k8s-set-13 get deployment,replicaset,pods -o wide'
+                bat 'kubectl --context docker-desktop -n k8s-set-13 get deployment rolling-web -o jsonpath="{.spec.template.spec.containers[0].image}"'
+            }
+        }
+    }
+}

@@ -1,0 +1,29 @@
+pipeline {
+    agent any
+    options {
+        timeout(time: 10, unit: 'MINUTES')
+        timestamps()
+        disableConcurrentBuilds()
+    }
+    stages {
+        stage('Prepare namespace') {
+            steps {
+                bat 'kubectl --context docker-desktop apply -f sets/set-05/namespace.yaml'
+            }
+        }
+        stage('Deploy and expose web application') {
+            steps {
+                bat 'kubectl --context docker-desktop apply -f sets/set-05/deployment.yaml'
+                bat 'kubectl --context docker-desktop apply -f sets/set-05/service.yaml'
+            }
+        }
+        stage('Verify Service') {
+            steps {
+                bat 'kubectl --context docker-desktop -n k8s-set-05 rollout status deployment/web --timeout=180s'
+                bat 'kubectl --context docker-desktop -n k8s-set-05 get service web -o wide'
+                bat 'kubectl --context docker-desktop -n k8s-set-05 get endpointslices -l kubernetes.io/service-name=web'
+                bat 'kubectl --context docker-desktop -n k8s-set-05 exec deployment/web -- wget -qO- http://web'
+            }
+        }
+    }
+}

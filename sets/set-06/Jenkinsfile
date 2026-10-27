@@ -1,0 +1,34 @@
+pipeline {
+    agent any
+    options {
+        timeout(time: 10, unit: 'MINUTES')
+        timestamps()
+        disableConcurrentBuilds()
+    }
+    stages {
+        stage('Prepare namespace') {
+            steps {
+                bat 'kubectl --context docker-desktop apply -f sets/set-06/namespace.yaml'
+            }
+        }
+        stage('Create Deployment') {
+            steps {
+                bat 'kubectl --context docker-desktop apply -f sets/set-06/deployment.yaml'
+                bat 'kubectl --context docker-desktop -n k8s-set-06 rollout status deployment/web --timeout=180s'
+            }
+        }
+        stage('Scale to three replicas') {
+            steps {
+                bat 'kubectl --context docker-desktop -n k8s-set-06 scale deployment/web --replicas=3'
+                bat 'kubectl --context docker-desktop -n k8s-set-06 rollout status deployment/web --timeout=180s'
+                bat 'kubectl --context docker-desktop -n k8s-set-06 wait deployment/web --for=jsonpath={.status.readyReplicas}=3 --timeout=180s'
+            }
+        }
+        stage('Verify replicas') {
+            steps {
+                bat 'kubectl --context docker-desktop -n k8s-set-06 get deployment web'
+                bat 'kubectl --context docker-desktop -n k8s-set-06 get pods -l app=web -o wide'
+            }
+        }
+    }
+}

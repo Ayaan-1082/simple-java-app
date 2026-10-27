@@ -1,0 +1,12 @@
+{
+  "name": "kubernetes-practical-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Small HTTP application for a Jenkins and Kubernetes practical",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=24" }
+}

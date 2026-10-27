@@ -1,0 +1,27 @@
+pipeline {
+    agent any
+    options {
+        timeout(time: 10, unit: 'MINUTES')
+        timestamps()
+        disableConcurrentBuilds()
+    }
+    stages {
+        stage('Prepare namespace') {
+            steps {
+                bat 'kubectl --context docker-desktop apply -f sets/set-03/namespace.yaml'
+            }
+        }
+        stage('Create Pod from YAML') {
+            steps {
+                bat 'kubectl --context docker-desktop apply -f sets/set-03/pod.yaml'
+            }
+        }
+        stage('Wait and verify') {
+            steps {
+                bat 'kubectl --context docker-desktop -n k8s-set-03 wait --for=condition=Ready pod/yaml-pod --timeout=180s'
+                bat 'kubectl --context docker-desktop -n k8s-set-03 get pod yaml-pod -o wide'
+                bat 'kubectl --context docker-desktop -n k8s-set-03 exec yaml-pod -- wget -qO- http://127.0.0.1'
+            }
+        }
+    }
+}

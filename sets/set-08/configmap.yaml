@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-config
+  namespace: k8s-set-08
+data:
+  index.html: |
+    <!doctype html>
+    <html lang="en"><head><meta charset="utf-8"><title>Set 8 ConfigMap</title></head>
+    <body><h1>Configured by Jenkins</h1><p>This page is mounted from a Kubernetes ConfigMap.</p></body></html>

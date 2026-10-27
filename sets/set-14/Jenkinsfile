@@ -1,0 +1,44 @@
+pipeline {
+    agent any
+    options { timeout(time: 10, unit: 'MINUTES'); timestamps(); disableConcurrentBuilds() }
+    stages {
+        stage('Introduce a known deployment failure') {
+            steps { bat 'kubectl --context docker-desktop apply -f sets/set-14/deployment.yaml' }
+        }
+        stage('Detect the rollout failure') {
+            steps {
+                script {
+                    int result = bat(returnStatus: true, script: 'kubectl --context docker-desktop -n k8s-set-14 rollout status deployment/troubleshooting-web --timeout=45s')
+                    if (result == 0) { error('The deliberately invalid image unexpectedly deployed; the failure demonstration was not detected.') }
+                    echo 'Expected failure detected. Collecting the Pod reason before repairing it.'
+                }
+            }
+        }
+        stage('Collect troubleshooting evidence') {
+            steps {
+                powershell '''
+                    $ErrorActionPreference = 'Stop'
+                    New-Item -ItemType Directory -Force evidence | Out-Null
+                    & kubectl --context docker-desktop -n k8s-set-14 describe deployment troubleshooting-web 2>&1 | Tee-Object evidence/set14-deployment.txt
+                    & kubectl --context docker-desktop -n k8s-set-14 describe pods -l app=troubleshooting-web 2>&1 | Tee-Object evidence/set14-pods.txt
+                    & kubectl --context docker-desktop -n k8s-set-14 get events --sort-by=.metadata.creationTimestamp 2>&1 | Tee-Object evidence/set14-events.txt
+                    $pods = & kubectl --context docker-desktop -n k8s-set-14 get pods -l app=troubleshooting-web -o json
+                    if ($LASTEXITCODE -ne 0) { throw 'Cannot read Pod status; the failure cause has not been established.' }
+                    $reasons = ($pods | ConvertFrom-Json).items.status.containerStatuses.state.waiting.reason
+                    if (-not ($reasons | Where-Object { $_ -in @('ErrImagePull', 'ImagePullBackOff') })) {
+                        throw "Expected an image-pull failure, but found: $reasons"
+                    }
+                    "Confirmed image-pull failure: $reasons"
+                '''
+                archiveArtifacts artifacts: 'evidence/set14-*.txt', allowEmptyArchive: false
+            }
+        }
+        stage('Repair and verify recovery') {
+            steps {
+                bat 'kubectl --context docker-desktop -n k8s-set-14 set image deployment/troubleshooting-web web=nginx:1.28-alpine'
+                bat 'kubectl --context docker-desktop -n k8s-set-14 rollout status deployment/troubleshooting-web --timeout=180s'
+                bat 'kubectl --context docker-desktop -n k8s-set-14 get deployment,pods -o wide'
+            }
+        }
+    }
+}

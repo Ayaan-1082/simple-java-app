@@ -1,0 +1,27 @@
+pipeline {
+    agent any
+    options {
+        timeout(time: 10, unit: 'MINUTES')
+        timestamps()
+        disableConcurrentBuilds()
+    }
+    stages {
+        stage('Prepare namespace') {
+            steps {
+                bat 'kubectl --context docker-desktop apply -f sets/set-04/namespace.yaml'
+            }
+        }
+        stage('Deploy web application') {
+            steps {
+                bat 'kubectl --context docker-desktop apply -f sets/set-04/deployment.yaml'
+            }
+        }
+        stage('Verify Deployment') {
+            steps {
+                bat 'kubectl --context docker-desktop -n k8s-set-04 rollout status deployment/web --timeout=180s'
+                bat 'kubectl --context docker-desktop -n k8s-set-04 get deployment,replicaset,pods -o wide'
+                bat 'kubectl --context docker-desktop -n k8s-set-04 exec deployment/web -- wget -qO- http://127.0.0.1'
+            }
+        }
+    }
+}

@@ -1,0 +1,30 @@
+pipeline {
+    agent any
+    options {
+        timeout(time: 10, unit: 'MINUTES')
+        timestamps()
+        disableConcurrentBuilds()
+    }
+    stages {
+        stage('Prepare namespace') {
+            steps {
+                bat 'kubectl --context docker-desktop apply -f sets/set-08/namespace.yaml'
+            }
+        }
+        stage('Create ConfigMap and application') {
+            steps {
+                bat 'kubectl --context docker-desktop apply -f sets/set-08/configmap.yaml'
+                bat 'kubectl --context docker-desktop apply -f sets/set-08/deployment.yaml'
+                bat 'kubectl --context docker-desktop apply -f sets/set-08/service.yaml'
+            }
+        }
+        stage('Verify mounted configuration') {
+            steps {
+                bat 'kubectl --context docker-desktop -n k8s-set-08 rollout status deployment/config-web --timeout=180s'
+                bat 'kubectl --context docker-desktop -n k8s-set-08 get configmap web-config'
+                bat 'kubectl --context docker-desktop -n k8s-set-08 exec deployment/config-web -- grep "Configured by Jenkins" /usr/share/nginx/html/index.html'
+                bat 'kubectl --context docker-desktop -n k8s-set-08 exec deployment/config-web -- wget -qO- http://config-web'
+            }
+        }
+    }
+}

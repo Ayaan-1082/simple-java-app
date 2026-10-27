@@ -1,0 +1,38 @@
+pipeline {
+    agent any
+    options {
+        timeout(time: 10, unit: 'MINUTES')
+        timestamps()
+        disableConcurrentBuilds()
+    }
+    stages {
+        stage('Prepare namespace') {
+            steps {
+                bat 'kubectl --context docker-desktop apply -f sets/set-09/namespace.yaml'
+            }
+        }
+        stage('Create PVC and mount in Pod') {
+            steps {
+                bat 'kubectl --context docker-desktop get storageclass'
+                bat 'kubectl --context docker-desktop apply -f sets/set-09/pvc.yaml'
+                bat 'kubectl --context docker-desktop apply -f sets/set-09/pod.yaml'
+                bat 'kubectl --context docker-desktop -n k8s-set-09 wait --for=condition=Ready pod/pvc-demo --timeout=180s'
+            }
+        }
+        stage('Write persistent data') {
+            steps {
+                bat 'kubectl --context docker-desktop -n k8s-set-09 exec pvc-demo -- sh -c "echo stored-through-jenkins > /data/proof.txt"'
+                bat 'kubectl --context docker-desktop -n k8s-set-09 exec pvc-demo -- cat /data/proof.txt'
+                bat 'kubectl --context docker-desktop -n k8s-set-09 get pvc lab-storage'
+            }
+        }
+        stage('Verify data survives Pod replacement') {
+            steps {
+                bat 'kubectl --context docker-desktop -n k8s-set-09 delete pod pvc-demo --wait=true'
+                bat 'kubectl --context docker-desktop apply -f sets/set-09/pod.yaml'
+                bat 'kubectl --context docker-desktop -n k8s-set-09 wait --for=condition=Ready pod/pvc-demo --timeout=180s'
+                bat 'kubectl --context docker-desktop -n k8s-set-09 exec pvc-demo -- grep -Fx stored-through-jenkins /data/proof.txt'
+            }
+        }
+    }
+}

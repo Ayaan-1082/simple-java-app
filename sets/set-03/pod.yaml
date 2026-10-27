@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: yaml-pod
+  namespace: k8s-set-03
+  labels:
+    app: yaml-pod
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.28-alpine
+      ports:
+        - containerPort: 80
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 100m
+          memory: 96Mi

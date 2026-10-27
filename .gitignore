@@ -1,1 +1,11 @@
+.runtime/
+node_modules/
+evidence/
+*.log
+*kubeconfig*
+*password*
+*credentials*
+Lab-Login.txt
 target/
+.docker-auth/
+*.generated.yaml

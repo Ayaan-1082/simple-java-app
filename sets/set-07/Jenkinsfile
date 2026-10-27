@@ -1,0 +1,35 @@
+pipeline {
+    agent any
+    options {
+        timeout(time: 10, unit: 'MINUTES')
+        timestamps()
+        disableConcurrentBuilds()
+    }
+    stages {
+        stage('Prepare namespace') {
+            steps {
+                bat 'kubectl --context docker-desktop apply -f sets/set-07/namespace.yaml'
+            }
+        }
+        stage('Deploy original image') {
+            steps {
+                bat 'kubectl --context docker-desktop apply -f sets/set-07/deployment.yaml'
+                bat 'kubectl --context docker-desktop -n k8s-set-07 rollout status deployment/web --timeout=180s'
+                bat 'kubectl --context docker-desktop -n k8s-set-07 exec deployment/web -- nginx -v'
+            }
+        }
+        stage('Update Docker image') {
+            steps {
+                bat 'kubectl --context docker-desktop -n k8s-set-07 set image deployment/web nginx=nginx:1.30-alpine'
+                bat 'kubectl --context docker-desktop -n k8s-set-07 rollout status deployment/web --timeout=180s'
+            }
+        }
+        stage('Verify new image') {
+            steps {
+                bat 'kubectl --context docker-desktop -n k8s-set-07 get deployment web -o jsonpath="{.spec.template.spec.containers[0].image}"'
+                bat 'kubectl --context docker-desktop -n k8s-set-07 exec deployment/web -- nginx -v'
+                bat 'kubectl --context docker-desktop -n k8s-set-07 get pods -o wide'
+            }
+        }
+    }
+}
