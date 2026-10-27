@@ -4,7 +4,7 @@ Aim: use Jenkins to build a container, run its application tests, and deploy tha
 
 Run the Set 12 job. The stages build the root Dockerfile, run the Node tests inside the image, render the Kubernetes manifest with a unique image tag, wait for readiness, and request `/health` through the Service.
 
-Open <http://localhost:30012> to see the web application. Verify with:
+Run [Start-AppAccess.ps1](../../Start-AppAccess.ps1) from the lab root, then open [the web application](http://localhost:30012). This Docker Desktop cluster needs a local Service port forward for Windows browser access. The helper reconnects after a rollout replaces its forwarded Pod. Verify with:
 
 ```powershell
 kubectl --context docker-desktop -n k8s-set-12 get deployment,pods,service -o wide

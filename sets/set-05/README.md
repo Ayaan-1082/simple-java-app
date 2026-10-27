@@ -10,7 +10,7 @@ The pipeline creates or reuses namespace `k8s-set-05`. Its commands are visible 
 
 ## What it demonstrates
 
-The Service selector matches the Pods labelled app=web. Its port80 maps to the nginx container port80, and NodePort30005 exposes the Service through the Docker Desktop node.
+The Service selector matches the Pods labelled app=web. Its port 80 maps to the nginx container port 80, and NodePort 30005 exposes the Service through the Docker Desktop node.
 
 ## Verify from PowerShell
 
@@ -19,6 +19,6 @@ kubectl --context docker-desktop -n k8s-set-05 get service web
 kubectl --context docker-desktop -n k8s-set-05 get endpointslices -l kubernetes.io/service-name=web
 ```
 
-Expected result: the Service reports 80:30005/TCP and an EndpointSlice contains the Pod address. Open http://localhost:30005. If this Docker Desktop version does not forward NodePorts to localhost, run `kubectl --context docker-desktop -n k8s-set-05 port-forward service/web 8005:80` and open http://localhost:8005.
+Expected result: the Service reports `80:30005/TCP` and an EndpointSlice contains the Pod address. This Docker Desktop kind cluster does not forward NodePorts directly to Windows localhost. Run [Start-AppAccess.ps1](../../Start-AppAccess.ps1) from the lab root, then open [the app](http://localhost:30005). The script forwards the Service locally; the Kubernetes object remains a NodePort Service. The helper reconnects after Pod replacement.
 
 

@@ -14,11 +14,14 @@ powershell -ExecutionPolicy Bypass -File .\Start-Lab.ps1
 ```
 
 3. Open [the practice Jenkins](http://localhost:8081). Its username is `labadmin`; the generated password is in [Lab-Login.txt](../Lab-Login.txt). Keep that file private.
-4. Open a job named `K8s-Set-01` through `K8s-Set-15`. Select **Build Now**, or **Build with Parameters** for Sets 11 and 15. Open the new build, then **Console Output**.
+4. Open a job named `K8s-Set-01` through `K8s-Set-15`. Select **Build Now**, or **Build with Parameters** for Sets 11 and 15. Keep the prepared GitHub defaults unless changing repositories. Open the new build, then **Console Output**.
+5. After the application jobs have run, start browser access with `powershell -ExecutionPolicy Bypass -File .\Start-AppAccess.ps1`. It reconnects the local forwards after Pod replacement.
 
 The runtime, logs, credentials and Jenkins workspaces are under `../../work/lab-runtime`, outside this deliverable folder. The launcher copies existing installed Pipeline plugins, prepares the cluster configuration and registers the 15 jobs. Keep this folder in its present location while using the prepared jobs. The launcher needs the existing Jenkins WAR and plugin directory; copying only the lab files to another computer does not install those prerequisites.
 
-The teacher uses Jenkins port 8080; **this lab uses 8081**. Application ports are separate: Set 5 uses 30005, Set 11 uses 30011, Set 12 uses 30012 and Set 15 uses 30015. A browser tab for Jenkins does not itself prove Kubernetes works. This Docker Desktop kind cluster did not forward NodePorts directly to Windows localhost, so `Start-AppAccess.ps1` starts local Kubernetes port forwards for browser access. The Services in Sets 5, 12 and 15 are still NodePort Services. After a rollout replaces the forwarded Pod, rerun `Start-AppAccess.ps1` if the browser connection drops.
+The teacher uses Jenkins port 8080; **this lab uses 8081**. Application ports are separate: Set 5 uses 30005, Set 11 uses 30011, Set 12 uses 30012 and Set 15 uses 30015. A browser tab for Jenkins does not itself prove Kubernetes works. This Docker Desktop kind cluster did not forward NodePorts directly to Windows localhost, so `Start-AppAccess.ps1` starts local Kubernetes port forwards for browser access. The Services in Sets 5, 12 and 15 are still NodePort Services. The helper reconnects after Pod replacement; a rollout can briefly interrupt browser access.
+
+GitHub Sets 11 and 15 are configured for [the dedicated `kubernetes-practical` branch](https://github.com/Ayaan-1082/simple-java-app/tree/kubernetes-practical) of your existing repository. Its original Java application on `main` is preserved. This practical branch uses a tiny Node.js HTTP application for the generic web deployment questions. Read [the cheat sheet](CHEAT-SHEET.md) for a short revision list.
 
 For a new computer, install Docker Desktop with its WSL 2 prerequisites, enable/create a Kubernetes cluster, install Java and Jenkins, then add Pipeline, Git, GitHub and credentials-related plugins as needed. Docker Desktop versions differ in their menus: the teacher shows Settings > Kubernetes > Enable; current versions also have a Kubernetes view with **Create cluster**. See [Docker Desktop Kubernetes documentation](https://docs.docker.com/desktop/use-desktop/kubernetes/).
 
@@ -42,7 +45,7 @@ Useful terms: an **image** packages the application; a **container** runs it; a 
 
 ## First fifteen minutes of practice
 
-Spend the first three minutes opening Jenkins and running Set 1. In the next four, run Sets 2 and 5 and open `http://localhost:30005`. Then run Set 6 and identify three ready Pods. Finish by reading Set 15's stages and explaining checkout -> build -> test -> deploy -> verify. If time permits, practise Set 14 because its troubleshooting commands apply to most failed questions.
+Spend the first three minutes opening Jenkins and running Set 1. In the next four, run Sets 2 and 5, run `Start-AppAccess.ps1`, and open `http://localhost:30005`. Then run Set 6 and identify three ready Pods. Finish by reading Set 15's stages and explaining checkout -> build -> test -> deploy -> verify. If time permits, practise Set 14 because its troubleshooting commands apply to most failed questions.
 
 For any allotted question: state the aim, show its Jenkinsfile and YAML, run the matching job, show the console and Kubernetes result, then explain the main object. Save evidence of the actual result instead of relying on a green message written into the pipeline.
 
@@ -105,7 +108,7 @@ The pipeline also requests the web page inside a selected Pod. **Expected:** the
 
 ## Set 5 Expose the application through a Service
 
-**Aim and files:** [Jenkinsfile](sets/set-05/Jenkinsfile), [service.yaml](sets/set-05/service.yaml) and Deployment YAML. Run **K8s-Set-05**, then open [the web application](http://localhost:30005).
+**Aim and files:** [Jenkinsfile](sets/set-05/Jenkinsfile), [service.yaml](sets/set-05/service.yaml) and Deployment YAML. Run **K8s-Set-05**, run [Start-AppAccess.ps1](Start-AppAccess.ps1), then open [the web application](http://localhost:30005).
 
 ```powershell
 kubectl --context docker-desktop -n k8s-set-05 get service web -o wide
@@ -191,19 +194,23 @@ kubectl --context docker-desktop -n k8s-set-10 exec deployment/web -- wget -qO- 
 
 ## Set 11 Automatically deploy GitHub changes
 
-**Aim and files:** [Jenkinsfile](sets/set-11/Jenkinsfile), [index.html](sets/set-11/index.html) and the folder's manifests. This part needs **your GitHub repository**; the prepared files alone do not prove GitHub integration.
+**Aim and files:** [Jenkinsfile](sets/set-11/Jenkinsfile), [index.html](sets/set-11/index.html) and the folder's manifests. **K8s-Set-11** is configured for repository `https://github.com/Ayaan-1082/simple-java-app.git`, branch `kubernetes-practical`. Keep these saved defaults and run **Build with Parameters**.
 
-Push this whole lab folder so `sets` is at repository root. In **K8s-Set-11**, provide `REPO_URL` and `BRANCH`; use `GIT_CREDENTIALS_ID` for a private repository. First run manually to establish checkout. For unattended runs, configure these repository/branch/credential values as the job's parameter defaults in its pipeline script or Jenkinsfile; do not rely on last-run form values.
+The job checks out GitHub, turns the committed page into a ConfigMap, applies the Deployment and restarts it to load that page. Its `pollSCM('H/2 * * * *')` trigger checks approximately every two minutes. Docker Desktop and Jenkins must remain running. The final [execution report](START-HERE.md) records evidence of actual checkout and automatic builds.
 
-The pipeline declares `pollSCM('H/2 * * * *')` and `githubPush()`. Polling checks for changes approximately every two minutes. GitHub cannot deliver a webhook directly to your laptop's localhost. A webhook needs a reachable Jenkins URL ending `/github-webhook/`; polling works while Jenkins stays local.
-
-Change `sets/set-11/index.html`, commit and push. **Expected proof:** a later SCM-triggered build, its new commit hash, successful deployment and changed HTML:
+To repeat the automatic-trigger demonstration, change `sets/set-11/index.html` on the practical branch, commit and push. **Expected proof:** a later build caused by an SCM change, its new commit hash, successful rollout and changed HTML:
 
 ```powershell
 kubectl --context docker-desktop -n k8s-set-11 exec deployment/github-web -- wget -qO- http://github-web
 ```
 
-A manual build proves checkout/deployment; retain the automatic build cause to prove triggering. **Viva:** Polling versus webhook? Jenkins asks Git on a schedule; a webhook sends an event to Jenkins. See [Jenkins Pipeline triggers](https://www.jenkins.io/doc/book/pipeline/syntax/#triggers).
+Run [Start-AppAccess.ps1](Start-AppAccess.ps1) and open [the GitHub-deployed page](http://localhost:30011). The helper reconnects after a rollout replaces its forwarded Pod.
+
+If you use another repository, its root must contain `sets`, `app`, `scripts` and the Dockerfile. Change the repository, branch and optional private-repository credential **defaults** in the Jenkins job script/Jenkinsfile; automatic builds should not depend on last-run form values.
+
+The pipeline also declares `githubPush()`. GitHub cannot deliver a webhook directly to your laptop's localhost; a webhook needs a reachable Jenkins URL ending `/github-webhook/`. This lab uses polling, which works with local Jenkins. A manual build proves checkout/deployment; preserve an SCM-triggered build cause to prove automation.
+
+**Viva:** Polling versus webhook? Jenkins asks Git on a schedule; a webhook sends an event to Jenkins. See [Jenkins Pipeline triggers](https://www.jenkins.io/doc/book/pipeline/syntax/#triggers).
 
 ## Set 12 Build a Docker image and deploy
 
@@ -216,7 +223,7 @@ kubectl --context docker-desktop -n k8s-set-12 rollout status deployment/lab-app
 kubectl --context docker-desktop -n k8s-set-12 get deployment,pods,service -o wide
 ```
 
-**Expected:** tests pass, Deployment becomes ready and [the sample web app](http://localhost:30012) responds. This local-image mode depends on the prepared Docker Desktop cluster's image store; another cluster may require pushing/loading the image.
+**Expected:** tests pass, Deployment becomes ready and, after running [Start-AppAccess.ps1](Start-AppAccess.ps1), [the sample web app](http://localhost:30012) responds. This local-image mode depends on the prepared Docker Desktop cluster's image store; another cluster may require pushing/loading the image.
 
 **Viva:** Why test the built image? It verifies the package being deployed. What stops deployment after a failed test? A nonzero command status fails the Jenkins stage.
 
@@ -250,18 +257,20 @@ kubectl --context docker-desktop -n k8s-set-14 rollout status deployment/trouble
 
 ## Set 15 Complete GitHub Jenkins Docker Kubernetes CI/CD
 
-**Aim and files:** [Jenkinsfile](sets/set-15/Jenkinsfile), Dockerfile, app tests, deployment helper and template. Run **K8s-Set-15** with `LOCAL_REHEARSAL=true` to rehearse build, tests, two-replica deployment and HTTP verification. This mode explicitly leaves GitHub unverified.
+**Aim and files:** [Jenkinsfile](sets/set-15/Jenkinsfile), Dockerfile, app tests, deployment helper and template. **K8s-Set-15** defaults to the configured GitHub repository `https://github.com/Ayaan-1082/simple-java-app.git`, branch `kubernetes-practical`, with `LOCAL_REHEARSAL=false`. Run **Build with Parameters** using these values.
 
-For the complete question, push the whole folder to your repository, set `LOCAL_REHEARSAL=false`, provide repository/branch/credentials, and run. Set these as pipeline parameter defaults for automatic runs. Push an application change and retain the subsequent SCM-triggered build and commit hash.
+The stages fetch code, build a uniquely tagged Docker image, run its tests, deploy two replicas, wait for readiness and request `/health` through the Service. Git polling runs approximately every two minutes. Push an application change on the practical branch and retain the later SCM-triggered build and its commit hash. See [START-HERE.md](START-HERE.md) for the actual verification record. The original Java application on `main` remains separate from this small HTTP sample.
 
-Docker Hub is optional for local rehearsal. To follow the teacher's registry flow, create your public `k8s-practical-app` repository, add a Jenkins **Username with password** credential named `dockerhub-creds` using your Docker Hub access token as password, enable `PUSH_DOCKERHUB` and enter `DOCKERHUB_NAMESPACE`. The pipeline uses `--password-stdin`; never paste the token into code. Private images additionally require a Kubernetes pull Secret.
+For a local rehearsal only, explicitly select `LOCAL_REHEARSAL=true`. That mode skips GitHub checkout and cannot prove GitHub integration. When changing repositories, update the pipeline's saved parameter defaults, including `LOCAL_REHEARSAL=false`, so automatic builds use the intended code.
+
+Docker Hub publishing is optional and defaults off. To follow the teacher's registry flow, create your public `k8s-practical-app` repository, add a Jenkins **Username with password** credential named `dockerhub-creds` using your Docker Hub access token as password, enable `PUSH_DOCKERHUB` and enter `DOCKERHUB_NAMESPACE`. The pipeline uses `--password-stdin`; never paste the token into code. Private images additionally require a Kubernetes pull Secret.
 
 ```powershell
 kubectl --context docker-desktop -n k8s-set-15 rollout status deployment/lab-app --timeout=180s
 kubectl --context docker-desktop -n k8s-set-15 get deployment,pods,service -o wide
 ```
 
-**Expected:** checkout of the pushed commit, passing tests, a unique image tag, two ready replicas, successful Service health check and [the app](http://localhost:30015). A Docker Hub push is proven only when that optional stage actually runs.
+**Expected:** checkout of the pushed commit, passing tests, a unique image tag, two ready replicas and a successful Service health check. Run [Start-AppAccess.ps1](Start-AppAccess.ps1) and open [the app](http://localhost:30015). Refresh browser access after a later rollout if needed. A Docker Hub push is proven only when that optional stage actually runs.
 
 **Viva:** CI versus CD? CI builds/tests changes; CD delivers validated changes to an environment. Why unique tags? The deployed version can be tied to a particular Jenkins build.
 

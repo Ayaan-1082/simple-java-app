@@ -1,16 +1,20 @@
 # Set 11 Integrate GitHub with Jenkins
 
-Aim: check out the latest GitHub commit and automatically deploy the web page stored in that commit.
+Aim: check out the latest GitHub commit and automatically deploy its web page.
 
-The prepared job is at <http://localhost:8081>. Its saved defaults use repository <https://github.com/Ayaan-1082/simple-java-app> and branch `kubernetes-practical`. Automatic builds use those saved defaults, so keep them aligned with the repository and branch containing this lab.
+Open **K8s-Set-11** at [Jenkins](http://localhost:8081) and select **Build with Parameters**. The saved defaults already use `https://github.com/Ayaan-1082/simple-java-app.git`, branch `kubernetes-practical`. The [dedicated branch](https://github.com/Ayaan-1082/simple-java-app/tree/kubernetes-practical) preserves the repository's original Java application on `main` and contains this web practical at its root.
 
-1. Push this entire lab folder to your own GitHub repository. The paths in the repository must include `sets/set-11/deployment.yaml`.
-2. Open the Set 11 Jenkins job, choose **Build with Parameters**, enter the repository HTTPS URL and branch, and run it once. Use a Jenkins credential ID for a private repository; do not paste a token into the pipeline.
-3. The pipeline registers Git polling every two minutes. On later GitHub changes, Jenkins detects a new commit and starts the job. Docker Desktop and Jenkins must stay running.
-4. Change the text in `sets/set-11/index.html`, commit, and push. Wait for a build whose cause says SCM change and whose console shows the new commit hash. Jenkins turns the checked out page into a ConfigMap and restarts the nginx Deployment so that its mounted page contains the new code.
+The job checks out the branch, converts `sets/set-11/index.html` into ConfigMap `github-page`, applies the manifests and restarts `github-web` to load the checked-out page. It polls GitHub approximately every two minutes. Docker Desktop and Jenkins must remain running.
 
-The `githubPush()` trigger also supports a GitHub webhook. A GitHub server cannot reach `http://localhost:8081` on your laptop. A webhook needs a reachable Jenkins address ending in `/github-webhook/`. Polling works with a local Jenkins server and does not need a public tunnel.
+To demonstrate automation, change this branch's `sets/set-11/index.html`, commit and push. Keep evidence of the later SCM-triggered build, new commit hash and changed HTML. A manually started build establishes checkout/deployment; its cause alone does not establish automatic triggering. The final [execution report](../../START-HERE.md) contains actual verification results.
 
-Verification: the console shows a Git commit hash, a successful rollout, a ready `github-web` Pod in namespace `k8s-set-11`, and the new HTML returned through the Service. To prove automation, keep evidence of the second build triggered after a pushed change. A manual build alone proves checkout and deployment, but does not prove an automatic trigger. To view it in a browser, run `kubectl --context docker-desktop -n k8s-set-11 port-forward service/github-web 8011:80` and open <http://localhost:8011>.
+```powershell
+kubectl --context docker-desktop -n k8s-set-11 get deployment,pods,service -o wide
+kubectl --context docker-desktop -n k8s-set-11 exec deployment/github-web -- wget -qO- http://github-web
+```
 
-Without a supplied GitHub repository this set is **not run**. Its pipeline stops with that reason.
+Run [Start-AppAccess.ps1](../../Start-AppAccess.ps1) from the lab root, then open [the deployed page](http://localhost:30011). This starts a local Service port forward because this Docker Desktop cluster does not directly expose NodePorts on Windows localhost. The helper reconnects after a rollout replaces its forwarded Pod.
+
+The declared `githubPush()` trigger supports a webhook, but GitHub cannot reach `http://localhost:8081` on your laptop. A webhook needs a reachable Jenkins address ending `/github-webhook/`. Polling works locally without exposing Jenkins.
+
+When using another repository, push the complete lab folder so `sets`, `app`, `scripts` and Dockerfile are at its root. Update the job/Jenkinsfile parameter defaults for repository, branch and an optional private-repository credential ID. Automatic builds use saved defaults, so do not rely on the previous manual form values. Never paste a token into the Jenkinsfile.
