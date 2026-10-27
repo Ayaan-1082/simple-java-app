@@ -12,7 +12,7 @@ function createServer() {
       response.end('<!doctype html><html lang="en"><meta charset="utf-8">' +
         '<meta name="viewport" content="width=device-width,initial-scale=1">' +
         '<title>Kubernetes practical</title><h1>Jenkins to Kubernetes</h1>' +
-        '<p>The sample web application is running.</p></html>');
+        '<p>Release 2: this page was built and deployed from the GitHub practical branch.</p></html>');
       return;
     }
     response.writeHead(404, { 'Content-Type': 'text/plain' });

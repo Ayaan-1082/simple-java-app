@@ -17,6 +17,7 @@ $existing = $null
 try { $existing = Invoke-WebRequest 'http://localhost:8081/login' -TimeoutSec 3 -UseBasicParsing } catch {}
 if ($existing) {
     Write-Host 'Port 8081 already responds. Existing lab left running; open http://localhost:8081.'
+    & (Join-Path $labRoot 'Start-AppAccess.ps1') -RuntimeDirectory $runtime
     return
 }
 $plugins = Join-Path $runtime 'plugins'
@@ -50,3 +51,4 @@ $access = "LOCAL PRACTICE JENKINS`r`nURL: http://localhost:8081`r`nUsername: lab
 [IO.File]::WriteAllText((Join-Path $labRoot '..\Lab-Login.txt'), $access)
 Write-Host 'Jenkins is starting at http://localhost:8081. It may take one or two minutes.'
 Write-Host 'Your local login is in the Lab-Login.txt file beside the kubernetes-practical folder.'
+& (Join-Path $labRoot 'Start-AppAccess.ps1') -RuntimeDirectory $runtime
