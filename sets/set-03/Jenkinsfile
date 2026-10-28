@@ -6,6 +6,15 @@ pipeline {
         disableConcurrentBuilds()
     }
     stages {
+        stage('Build set demonstration image') {
+            steps {
+                powershell './scripts/Build-SetImage.ps1 -SetNumber 3'
+                script {
+                    def imageNote = "Image k8s-set-03:build-${env.BUILD_NUMBER}; namespace k8s-set-03"
+                    currentBuild.description = [currentBuild.description, imageNote].findAll { it }.join(' | ')
+                }
+            }
+        }
         stage('Prepare namespace') {
             steps {
                 bat 'kubectl --context docker-desktop apply -f sets/set-03/namespace.yaml'
@@ -21,6 +30,12 @@ pipeline {
                 bat 'kubectl --context docker-desktop -n k8s-set-03 wait --for=condition=Ready pod/yaml-pod --timeout=180s'
                 bat 'kubectl --context docker-desktop -n k8s-set-03 get pod yaml-pod -o wide'
                 bat 'kubectl --context docker-desktop -n k8s-set-03 exec yaml-pod -- wget -qO- http://127.0.0.1'
+            }
+        }
+        stage('Show this build in Kubernetes') {
+            steps {
+                powershell './scripts/Deploy-SetImage.ps1 -SetNumber 3'
+                archiveArtifacts artifacts: 'set-image-evidence/*', fingerprint: true
             }
         }
     }

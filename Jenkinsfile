@@ -35,6 +35,15 @@ pipeline {
                 }
             }
         }
+        stage('Build set demonstration image') {
+            steps {
+                powershell './scripts/Build-SetImage.ps1 -SetNumber 15'
+                script {
+                    def imageNote = "Image k8s-set-15:build-${env.BUILD_NUMBER}; namespace k8s-set-15"
+                    currentBuild.description = [currentBuild.description, imageNote].findAll { it }.join(' | ')
+                }
+            }
+        }
         stage('Build Docker image') {
             steps { bat 'docker build -t %LAB_IMAGE% .' }
         }
@@ -70,6 +79,12 @@ pipeline {
         }
         stage('Deploy and verify Service') {
             steps { powershell '.\\scripts\\Deploy-App.ps1 -SetNumber 15' }
+        }
+        stage('Show this build in Kubernetes') {
+            steps {
+                powershell './scripts/Deploy-SetImage.ps1 -SetNumber 15'
+                archiveArtifacts artifacts: 'set-image-evidence/*', fingerprint: true
+            }
         }
     }
     post {

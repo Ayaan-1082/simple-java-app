@@ -6,6 +6,15 @@ pipeline {
         disableConcurrentBuilds()
     }
     stages {
+        stage('Build set demonstration image') {
+            steps {
+                powershell './scripts/Build-SetImage.ps1 -SetNumber 9'
+                script {
+                    def imageNote = "Image k8s-set-09:build-${env.BUILD_NUMBER}; namespace k8s-set-09"
+                    currentBuild.description = [currentBuild.description, imageNote].findAll { it }.join(' | ')
+                }
+            }
+        }
         stage('Prepare namespace') {
             steps {
                 bat 'kubectl --context docker-desktop apply -f sets/set-09/namespace.yaml'
@@ -32,6 +41,12 @@ pipeline {
                 bat 'kubectl --context docker-desktop apply -f sets/set-09/pod.yaml'
                 bat 'kubectl --context docker-desktop -n k8s-set-09 wait --for=condition=Ready pod/pvc-demo --timeout=180s'
                 bat 'kubectl --context docker-desktop -n k8s-set-09 exec pvc-demo -- grep -Fx stored-through-jenkins /data/proof.txt'
+            }
+        }
+        stage('Show this build in Kubernetes') {
+            steps {
+                powershell './scripts/Deploy-SetImage.ps1 -SetNumber 9'
+                archiveArtifacts artifacts: 'set-image-evidence/*', fingerprint: true
             }
         }
     }

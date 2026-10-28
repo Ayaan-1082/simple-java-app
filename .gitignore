@@ -9,3 +9,5 @@ Lab-Login.txt
 target/
 .docker-auth/
 *.generated.yaml
+.set-image-context-*/
+set-image-evidence/

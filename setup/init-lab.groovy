@@ -21,7 +21,8 @@ j.authorizationStrategy = authorization
 j.numExecutors = 2
 j.setLabelString('windows-lab')
 j.systemMessage = 'Kubernetes practical lab: 15 independent sets. See START-HERE.md for verified results.'
-JenkinsLocationConfiguration.get().setUrl('http://localhost:8081/')
+def httpPort = System.getenv('LAB_HTTP_PORT') ?: '8081'
+JenkinsLocationConfiguration.get().setUrl("http://localhost:${httpPort}/")
 def envProperty = j.globalNodeProperties.get(EnvironmentVariablesNodeProperty)
 if (envProperty == null) {
     envProperty = new EnvironmentVariablesNodeProperty()
@@ -52,9 +53,9 @@ Get-ChildItem -LiteralPath $env:LAB_ROOT -Force |
         def source = pipelineFile.getText('UTF-8')
         source = source.replaceFirst(/stages\s*\{/) { match -> match + preparation }
         job.setDefinition(new CpsFlowDefinition(source, true))
-        job.setDescription("Kubernetes practical set ${number}. Files: sets/set-${id}. Local rehearsal loads files from LAB_ROOT. See the README for GitHub configuration.")
+        job.setDescription("Kubernetes practical set ${number}. Each build creates Docker image k8s-set-${id}:build-N and rolls out build-demo in namespace k8s-set-${id}, alongside the exercise. Open Docker Desktop Images to see the new tag; select namespace k8s-set-${id} under Kubernetes to see its Pod.")
         job.save()
     }
 }
 j.save()
-println('Kubernetes practice jobs configured on http://localhost:8081/')
+println("Kubernetes practice jobs configured on http://localhost:${httpPort}/")

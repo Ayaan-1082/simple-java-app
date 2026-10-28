@@ -2,6 +2,15 @@ pipeline {
     agent any
     options { timeout(time: 10, unit: 'MINUTES'); timestamps(); disableConcurrentBuilds() }
     stages {
+        stage('Build set demonstration image') {
+            steps {
+                powershell './scripts/Build-SetImage.ps1 -SetNumber 13'
+                script {
+                    def imageNote = "Image k8s-set-13:build-${env.BUILD_NUMBER}; namespace k8s-set-13"
+                    currentBuild.description = [currentBuild.description, imageNote].findAll { it }.join(' | ')
+                }
+            }
+        }
         stage('Deploy initial version') {
             steps {
                 bat 'kubectl --context docker-desktop apply -f sets/set-13/deployment.yaml'
@@ -19,6 +28,12 @@ pipeline {
                 bat 'kubectl --context docker-desktop -n k8s-set-13 rollout history deployment/rolling-web'
                 bat 'kubectl --context docker-desktop -n k8s-set-13 get deployment,replicaset,pods -o wide'
                 bat 'kubectl --context docker-desktop -n k8s-set-13 get deployment rolling-web -o jsonpath="{.spec.template.spec.containers[0].image}"'
+            }
+        }
+        stage('Show this build in Kubernetes') {
+            steps {
+                powershell './scripts/Deploy-SetImage.ps1 -SetNumber 13'
+                archiveArtifacts artifacts: 'set-image-evidence/*', fingerprint: true
             }
         }
     }

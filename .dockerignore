@@ -4,3 +4,5 @@ evidence
 .docker-auth
 *.generated.yaml
 *.zip
+.set-image-context-*
+set-image-evidence

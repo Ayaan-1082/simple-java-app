@@ -2,6 +2,15 @@ pipeline {
     agent any
     options { timeout(time: 10, unit: 'MINUTES'); timestamps(); disableConcurrentBuilds() }
     stages {
+        stage('Build set demonstration image') {
+            steps {
+                powershell './scripts/Build-SetImage.ps1 -SetNumber 14'
+                script {
+                    def imageNote = "Image k8s-set-14:build-${env.BUILD_NUMBER}; namespace k8s-set-14"
+                    currentBuild.description = [currentBuild.description, imageNote].findAll { it }.join(' | ')
+                }
+            }
+        }
         stage('Introduce a known deployment failure') {
             steps { bat 'kubectl --context docker-desktop apply -f sets/set-14/deployment.yaml' }
         }
@@ -38,6 +47,12 @@ pipeline {
                 bat 'kubectl --context docker-desktop -n k8s-set-14 set image deployment/troubleshooting-web web=nginx:1.28-alpine'
                 bat 'kubectl --context docker-desktop -n k8s-set-14 rollout status deployment/troubleshooting-web --timeout=180s'
                 bat 'kubectl --context docker-desktop -n k8s-set-14 get deployment,pods -o wide'
+            }
+        }
+        stage('Show this build in Kubernetes') {
+            steps {
+                powershell './scripts/Deploy-SetImage.ps1 -SetNumber 14'
+                archiveArtifacts artifacts: 'set-image-evidence/*', fingerprint: true
             }
         }
     }

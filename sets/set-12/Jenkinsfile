@@ -2,6 +2,15 @@ pipeline {
     agent any
     options { timeout(time: 10, unit: 'MINUTES'); timestamps(); disableConcurrentBuilds() }
     stages {
+        stage('Build set demonstration image') {
+            steps {
+                powershell './scripts/Build-SetImage.ps1 -SetNumber 12'
+                script {
+                    def imageNote = "Image k8s-set-12:build-${env.BUILD_NUMBER}; namespace k8s-set-12"
+                    currentBuild.description = [currentBuild.description, imageNote].findAll { it }.join(' | ')
+                }
+            }
+        }
         stage('Select image version') {
             steps { script { env.LAB_IMAGE = "k8s-practical-app:set12-${env.BUILD_NUMBER}" } }
         }
@@ -13,6 +22,12 @@ pipeline {
         }
         stage('Deploy and check HTTP') {
             steps { powershell '.\\scripts\\Deploy-App.ps1 -SetNumber 12' }
+        }
+        stage('Show this build in Kubernetes') {
+            steps {
+                powershell './scripts/Deploy-SetImage.ps1 -SetNumber 12'
+                archiveArtifacts artifacts: 'set-image-evidence/*', fingerprint: true
+            }
         }
     }
 }

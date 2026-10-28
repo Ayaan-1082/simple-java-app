@@ -6,6 +6,15 @@ pipeline {
         disableConcurrentBuilds()
     }
     stages {
+        stage('Build set demonstration image') {
+            steps {
+                powershell './scripts/Build-SetImage.ps1 -SetNumber 6'
+                script {
+                    def imageNote = "Image k8s-set-06:build-${env.BUILD_NUMBER}; namespace k8s-set-06"
+                    currentBuild.description = [currentBuild.description, imageNote].findAll { it }.join(' | ')
+                }
+            }
+        }
         stage('Prepare namespace') {
             steps {
                 bat 'kubectl --context docker-desktop apply -f sets/set-06/namespace.yaml'
@@ -28,6 +37,12 @@ pipeline {
             steps {
                 bat 'kubectl --context docker-desktop -n k8s-set-06 get deployment web'
                 bat 'kubectl --context docker-desktop -n k8s-set-06 get pods -l app=web -o wide'
+            }
+        }
+        stage('Show this build in Kubernetes') {
+            steps {
+                powershell './scripts/Deploy-SetImage.ps1 -SetNumber 6'
+                archiveArtifacts artifacts: 'set-image-evidence/*', fingerprint: true
             }
         }
     }

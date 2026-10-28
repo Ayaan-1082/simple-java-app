@@ -1,5 +1,7 @@
 # Kubernetes Jenkins practical cheat sheet
 
+**Visible build result:** Docker Desktop > **Images** > search `k8s-set-NN` > show new tag `build-N`. Then **Kubernetes** > matching namespace > **build-demo**. Each build now creates and checks this demonstration image alongside the exercise. See [SHOW-TEACHER.md](SHOW-TEACHER.md).
+
 **Run:** start Docker Desktop -> run `powershell -ExecutionPolicy Bypass -File .\Start-Lab.ps1` -> open [Jenkins](http://localhost:8081) -> run `K8s-Set-NN` -> read **Console Output**. Login is in [Lab-Login.txt](../Lab-Login.txt). See [verified results](START-HERE.md) and [full guide](PRACTICAL-GUIDE.md).
 
 **Browser:** run `powershell -ExecutionPolicy Bypass -File .\Start-AppAccess.ps1` after the application jobs. Open Set 5: [30005](http://localhost:30005), Set 11: [30011](http://localhost:30011), Set 12: [30012](http://localhost:30012), Set 15: [30015](http://localhost:30015). These are local Service port forwards for this cluster; the helper reconnects after Pod replacement.

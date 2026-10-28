@@ -27,6 +27,15 @@ pipeline {
                 bat 'git log -1 --format="%%H %%s"'
             }
         }
+        stage('Build set demonstration image') {
+            steps {
+                powershell './scripts/Build-SetImage.ps1 -SetNumber 11'
+                script {
+                    def imageNote = "Image k8s-set-11:build-${env.BUILD_NUMBER}; namespace k8s-set-11"
+                    currentBuild.description = [currentBuild.description, imageNote].findAll { it }.join(' | ')
+                }
+            }
+        }
         stage('Deploy checked out page and manifest') {
             steps {
                 bat 'kubectl --context docker-desktop apply -f sets/set-11/namespace.yaml'
@@ -42,6 +51,12 @@ pipeline {
                 bat 'kubectl --context docker-desktop -n k8s-set-11 rollout status deployment/github-web --timeout=180s'
                 bat 'kubectl --context docker-desktop -n k8s-set-11 get deployment,pods,service -o wide'
                 bat 'kubectl --context docker-desktop -n k8s-set-11 exec deployment/github-web -- wget -qO- http://github-web'
+            }
+        }
+        stage('Show this build in Kubernetes') {
+            steps {
+                powershell './scripts/Deploy-SetImage.ps1 -SetNumber 11'
+                archiveArtifacts artifacts: 'set-image-evidence/*', fingerprint: true
             }
         }
     }

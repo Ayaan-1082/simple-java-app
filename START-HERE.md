@@ -1,8 +1,12 @@
 # Kubernetes practical lab results and startup
 
+For the teacher's Java example, start with [TEACHER-SETUP.md](TEACHER-SETUP.md) and the **Java-CICD** job on [practice Jenkins port 8081](http://localhost:8081/job/Java-CICD/). The fifteen sets below remain available as independent exercises. The teacher's exact Java source is also saved in `../teacher-java-practical`.
+
 All fifteen sets ran successfully through Jenkins on this computer on 27 October 2026. Sets 11 and 15 also passed automatic builds triggered by an actual pushed GitHub change. The running cluster is Docker Desktop kind, Kubernetes 1.36.1; Jenkins is version 2.580.1 with Java 21.
 
 ## Open the prepared lab
+
+**Show a visible change for every build:** every prepared set now builds a real image named **k8s-set-NN:build-N** and rolls it out as **build-demo** in its own namespace. Open **Docker Desktop > Images**, search the set name and show its new build tag. Then choose **Kubernetes > Namespace > k8s-set-NN** to see the new Pod. See [SHOW-TEACHER.md](SHOW-TEACHER.md) for the demonstration. These are added stages alongside each original exercise; the separate teacher Java example remains in `default`.
 
 1. Open [Jenkins](http://localhost:8081). Username: `labadmin`. Your generated local password is in [Lab-Login.txt](../Lab-Login.txt).
 2. Open a job named `K8s-Set-01` through `K8s-Set-15`. Choose **Build Now**, or **Build with Parameters** for Sets 11 and 15, then open **Console Output**.
@@ -24,7 +28,7 @@ Allow Jenkins a minute or two to start, then open port 8081. The launcher also s
 powershell -ExecutionPolicy Bypass -File .\Start-AppAccess.ps1
 ```
 
-This computer's installed Jenkins Windows service could not be started with the available Windows permissions. The prepared lab instead uses the installed Jenkins WAR with a separate home at `../../work/lab-runtime` and listens on localhost port 8081. Your existing Jenkins jobs remain in their original home. Keep both the output folder and the private runtime folder for tomorrow. The launcher depends on the installed Jenkins WAR/plugins, Java, Docker and kubectl; the ZIP alone is not a fresh-machine installer.
+The original Jenkins Windows service now runs on port 8080 and has different accounts. The prepared lab uses the installed Jenkins WAR with a separate home at `../../work/lab-runtime` and consistently listens on localhost port 8081. Use `labadmin` and the password in `../Lab-Login.txt` on port 8081. The launcher checks that an existing instance accepts this account before reusing it. Your original Jenkins jobs remain in their original home. Keep both the output folder and the private runtime folder. The launcher depends on the installed Jenkins WAR/plugins, Java, Docker and kubectl; the ZIP alone is not a fresh-machine installer.
 
 ## Verified results
 

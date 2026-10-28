@@ -2,6 +2,8 @@
 
 Use this guide to run and explain the 15 practical sets. The working files are already arranged by question under [sets](sets). Each folder contains its Jenkinsfile and Kubernetes YAML. Read [START-HERE.md](START-HERE.md) for the final execution results: **expected results below describe what a correct run should show; they do not claim that a set has passed.**
 
+Use [TEACHER-SETUP.md](TEACHER-SETUP.md) for the supplied PDF's exact Java/Maven baseline and the `Java-CICD` job. Its console-only Java application is retained on `main`; the web exercises below add the HTTP behavior their questions require.
+
 ## Start the prepared lab
 
 Your computer already has Docker Desktop 4.96, Java 21, Docker, kubectl and Jenkins installed. The existing Docker Desktop Kubernetes cluster reported version 1.36.1 and a Ready node during setup. Starting the installed Jenkins Windows service was denied, so this practical uses the installed Jenkins WAR with a separate lab home and your current Windows identity.
@@ -19,7 +21,7 @@ powershell -ExecutionPolicy Bypass -File .\Start-Lab.ps1
 
 The runtime, logs, credentials and Jenkins workspaces are under `../../work/lab-runtime`, outside this deliverable folder. The launcher copies existing installed Pipeline plugins, prepares the cluster configuration and registers the 15 jobs. Keep this folder in its present location while using the prepared jobs. The launcher needs the existing Jenkins WAR and plugin directory; copying only the lab files to another computer does not install those prerequisites.
 
-The teacher uses Jenkins port 8080; **this lab uses 8081**. Application ports are separate: Set 5 uses 30005, Set 11 uses 30011, Set 12 uses 30012 and Set 15 uses 30015. A browser tab for Jenkins does not itself prove Kubernetes works. This Docker Desktop kind cluster did not forward NodePorts directly to Windows localhost, so `Start-AppAccess.ps1` starts local Kubernetes port forwards for browser access. The Services in Sets 5, 12 and 15 are still NodePort Services. The helper reconnects after Pod replacement; a rollout can briefly interrupt browser access.
+The teacher uses Jenkins port 8080; **this lab uses 8081** because the original Windows service occupies 8080 and has different accounts. Application ports are separate: Set 5 uses 30005, Set 11 uses 30011, Set 12 uses 30012 and Set 15 uses 30015. A browser tab for Jenkins does not itself prove Kubernetes works. This Docker Desktop kind cluster did not forward NodePorts directly to Windows localhost, so `Start-AppAccess.ps1` starts local Kubernetes port forwards for browser access. The Services in Sets 5, 12 and 15 are still NodePort Services. The helper reconnects after Pod replacement; a rollout can briefly interrupt browser access.
 
 GitHub Sets 11 and 15 are configured for [the dedicated `kubernetes-practical` branch](https://github.com/Ayaan-1082/simple-java-app/tree/kubernetes-practical) of your existing repository. Its original Java application on `main` is preserved. This practical branch uses a tiny Node.js HTTP application for the generic web deployment questions. Read [the cheat sheet](CHEAT-SHEET.md) for a short revision list.
 
