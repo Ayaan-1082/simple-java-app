@@ -14,8 +14,6 @@ $kubectl = (Get-Command kubectl -ErrorAction Stop).Source
 $mavenBin = Join-Path $env:USERPROFILE 'tools\apache-maven-3.9.9\bin'
 $baseUrl = "http://localhost:$HttpPort"
 if (!(Test-Path -LiteralPath $JenkinsWar)) { throw "Jenkins WAR not found: $JenkinsWar" }
-& $kubectl --context docker-desktop get nodes --request-timeout=15s
-if ($LASTEXITCODE -ne 0) { throw 'Start Docker Desktop and enable Kubernetes, then run Start-Lab.ps1 again.' }
 $existing = $null
 try { $existing = Invoke-WebRequest "$baseUrl/login" -TimeoutSec 3 -UseBasicParsing } catch {}
 if ($existing) {
@@ -31,7 +29,6 @@ if ($existing) {
         throw "A different Jenkins is using port $HttpPort, or the saved practice password has changed. Your existing Jenkins was left running."
     }
     Write-Host "Port $HttpPort already responds. Existing lab left running; open $baseUrl."
-    & (Join-Path $labRoot 'Start-AppAccess.ps1') -RuntimeDirectory $runtime
     return
 }
 $pidFile = Join-Path $runtime 'jenkins.pid'
@@ -55,8 +52,11 @@ Get-ChildItem -LiteralPath $PluginDirectory -File | Where-Object { $_.Extension 
 if (!(Test-Path -LiteralPath (Join-Path $plugins 'workflow-job.jpi'))) { throw 'Install the Jenkins Pipeline plugins in the existing Jenkins installation first.' }
 Copy-Item -LiteralPath (Join-Path $labRoot 'setup\init-lab.groovy') -Destination (Join-Path $init 'init-lab.groovy') -Force
 $kubeconfig = & $kubectl --context docker-desktop config view --minify --flatten --raw
-if ($LASTEXITCODE -ne 0) { throw 'Cannot export the Docker Desktop kubeconfig.' }
-[IO.File]::WriteAllText((Join-Path $runtime 'kubeconfig'), ($kubeconfig -join "`n"), [Text.UTF8Encoding]::new($false))
+if ($LASTEXITCODE -eq 0) {
+    [IO.File]::WriteAllText((Join-Path $runtime 'kubeconfig'), ($kubeconfig -join "`n"), [Text.UTF8Encoding]::new($false))
+} else {
+    Write-Warning 'Kubernetes settings are unavailable. Jenkins will start; start Docker Desktop before running a set.'
+}
 $passwordPath = Join-Path $runtime 'lab-password.txt'
 if (!(Test-Path -LiteralPath $passwordPath)) {
     $bytes = New-Object byte[] 24
@@ -77,4 +77,9 @@ $access = "LOCAL PRACTICE JENKINS`r`nURL: $baseUrl`r`nUsername: labadmin`r`nPass
 [IO.File]::WriteAllText((Join-Path $labRoot '..\Lab-Login.txt'), $access)
 Write-Host "Jenkins is starting at $baseUrl. It may take one or two minutes."
 Write-Host 'Your local login is in the Lab-Login.txt file beside the kubernetes-practical folder.'
-& (Join-Path $labRoot 'Start-AppAccess.ps1') -RuntimeDirectory $runtime
+& $kubectl --context docker-desktop get nodes --request-timeout=5s 1>$null 2>$null
+if ($LASTEXITCODE -eq 0) {
+    & (Join-Path $labRoot 'Start-AppAccess.ps1') -RuntimeDirectory $runtime
+} else {
+    Write-Host 'Jenkins can open now. Start Docker Desktop before running Kubernetes builds or Start-AppAccess.ps1.'
+}

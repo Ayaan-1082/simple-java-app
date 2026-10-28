@@ -6,6 +6,8 @@ All fifteen sets ran successfully through Jenkins on this computer on 27 October
 
 ## Open the prepared lab
 
+Double-click **Open-Jenkins.cmd** in this folder to start the practice server if needed, wait for it to be ready, and open the correct browser address on port 8081. Closing a browser tab does not stop Jenkins. If the server process stops, run this launcher again. Jenkins can open while Docker is stopped; start Docker Desktop before building a Kubernetes set.
+
 **Show a visible change for every build:** every prepared set now builds a real image named **k8s-set-NN:build-N** and rolls it out as **build-demo** in its own namespace. Open **Docker Desktop > Images**, search the set name and show its new build tag. Then choose **Kubernetes > Namespace > k8s-set-NN** to see the new Pod. See [SHOW-TEACHER.md](SHOW-TEACHER.md) for the demonstration. These are added stages alongside each original exercise; the separate teacher Java example remains in `default`.
 
 1. Open [Jenkins](http://localhost:8081). Username: `labadmin`. Your generated local password is in [Lab-Login.txt](../Lab-Login.txt).
